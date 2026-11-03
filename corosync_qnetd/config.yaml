@@ -1,5 +1,5 @@
 name: Corosync QNetd
-version: "0.0.0"
+version: "2026.11.03.1"
 slug: corosync_qnetd
 description: Proxmox QDevice arbiter (corosync-qnetd)
 url: https://github.com/Klynn7/ha-addons

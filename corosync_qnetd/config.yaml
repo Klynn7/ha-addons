@@ -1,0 +1,21 @@
+name: Corosync QNetd
+version: "0.0.0"
+slug: corosync_qnetd
+description: Proxmox QDevice arbiter (corosync-qnetd)
+url: https://github.com/Klynn7/ha-addons
+# Prebuilt by .github/workflows/build.yaml; {arch} is filled in by Supervisor.
+# The workflow bumps `version` only after the images for that version are pushed.
+image: ghcr.io/klynn7/{arch}-corosync-qnetd
+arch:
+  - aarch64
+startup: services
+boot: auto
+init: false
+host_network: true
+options:
+  ssh_port: 2222
+  authorized_keys: []
+schema:
+  ssh_port: port
+  authorized_keys:
+    - str

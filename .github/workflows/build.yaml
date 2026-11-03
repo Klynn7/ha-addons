@@ -1,0 +1,155 @@
+name: Build corosync-qnetd add-on
+
+on:
+  schedule:
+    - cron: "17 9 * * 1" # Mondays 09:17 UTC (02:17 Mountain)
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Build and publish even if nothing changed
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+    paths:
+      - "corosync_qnetd/**"
+      - ".github/workflows/build.yaml"
+
+concurrency:
+  group: build-corosync-qnetd
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  ADDON: corosync_qnetd
+  MANIFEST: corosync_qnetd/build-manifest.txt
+
+jobs:
+  # Build a probe image on a native arm64 runner and record exactly what's inside it.
+  # If the package list or add-on sources differ from the last published
+  # build, a new version is cut.
+  check:
+    runs-on: ubuntu-24.04-arm
+    outputs:
+      changed: ${{ steps.decide.outputs.changed }}
+      version: ${{ steps.decide.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build probe image and write manifest
+        run: |
+          docker build --pull --no-cache --build-arg BUILD_VERSION=probe -t probe "$ADDON"
+          src_hash=$(
+            { sed '/^version:/d' "$ADDON/config.yaml"; cat "$ADDON/Dockerfile" "$ADDON/run.sh"; } \
+              | sha256sum | cut -d' ' -f1
+          )
+          {
+            echo "# source-sha256 $src_hash"
+            docker run --rm --entrypoint dpkg-query probe -W -f='${Package} ${Version}\n' | sort
+          } > new-manifest.txt
+
+      - name: Decide whether to publish
+        id: decide
+        run: |
+          if [ -f "$MANIFEST" ]; then
+            diff -u "$MANIFEST" new-manifest.txt > manifest.diff || true
+          else
+            echo "(no previous manifest)" > manifest.diff
+          fi
+
+          if [ -s manifest.diff ] || [ "${{ inputs.force }}" = "true" ]; then
+            changed=true
+          else
+            changed=false
+          fi
+          version="$(date -u +%Y.%m.%d).${GITHUB_RUN_NUMBER}"
+
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          {
+            echo "### corosync-qnetd: changed=$changed, version=$version"
+            echo '```diff'
+            cat manifest.diff
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: manifest
+          path: new-manifest.txt
+
+  # Supervisor expects one image per arch: ghcr.io/<owner>/<arch>-corosync-qnetd:<version>
+  # Native arm64 runner (free for public repos), so no QEMU emulation.
+  build:
+    needs: check
+    if: needs.check.outputs.changed == 'true'
+    runs-on: ubuntu-24.04-arm
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - arch: aarch64
+            platform: linux/arm64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lowercase owner for GHCR
+        run: echo "OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ env.ADDON }}
+          platforms: ${{ matrix.platform }}
+          push: true
+          pull: true
+          no-cache: true
+          provenance: false
+          build-args: |
+            BUILD_VERSION=${{ needs.check.outputs.version }}
+          tags: |
+            ghcr.io/${{ env.OWNER }}/${{ matrix.arch }}-corosync-qnetd:${{ needs.check.outputs.version }}
+            ghcr.io/${{ env.OWNER }}/${{ matrix.arch }}-corosync-qnetd:latest
+          labels: |
+            io.hass.type=addon
+            io.hass.arch=${{ matrix.arch }}
+            io.hass.version=${{ needs.check.outputs.version }}
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+
+  # Only after every image is pushed does config.yaml get the new version,
+  # so Home Assistant never sees a version it can't pull.
+  publish:
+    needs: [check, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: manifest
+
+      - name: Bump version and record manifest
+        env:
+          VERSION: ${{ needs.check.outputs.version }}
+        run: |
+          sed -i -E "s/^version: .*/version: \"${VERSION}\"/" "$ADDON/config.yaml"
+          mv new-manifest.txt "$MANIFEST"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$ADDON/config.yaml" "$MANIFEST"
+          git commit -m "corosync_qnetd: release ${VERSION}"
+          git pull --rebase
+          git push

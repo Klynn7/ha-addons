@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2026.11.03.5
 
 - corosync-qnetd now receives the stop signal directly and shuts down cleanly. Previously `runuser` force-killed it 2 seconds after every stop, logging "Session terminated, killing shell... ...killed."
 

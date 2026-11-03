@@ -47,4 +47,6 @@ else
 fi
 
 echo "[qnetd] Starting corosync-qnetd on TCP 5403"
-exec runuser -u coroqnetd -- corosync-qnetd -f
+# setpriv drops privileges and execs in place, so qnetd itself receives
+# Supervisor's SIGTERM and shuts down cleanly (runuser would SIGKILL it after 2s).
+exec setpriv --reuid=coroqnetd --regid=coroqnetd --init-groups -- corosync-qnetd -f

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- corosync-qnetd now receives the stop signal directly and shuts down cleanly. Previously `runuser` force-killed it 2 seconds after every stop, logging "Session terminated, killing shell... ...killed."
+
 ## 2026.11.03.2
 
 - Log lines are now timestamped in the Home Assistant system timezone (e.g. `2026-11-03 07:55:16 MST`), covering add-on startup messages, sshd and corosync-qnetd output.

@@ -7,7 +7,7 @@ ARG BUILD_VERSION
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get upgrade -y \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-      corosync-qnetd openssh-server jq \
+      corosync-qnetd openssh-server jq tzdata \
  && rm -rf /var/lib/apt/lists/* \
  && mkdir -p /run/sshd \
  && id coroqnetd

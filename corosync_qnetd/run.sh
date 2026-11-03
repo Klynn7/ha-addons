@@ -1,6 +1,12 @@
 #!/bin/bash
 set -euo pipefail
 
+# Prefix every line from this script, sshd and qnetd with a local timestamp.
+# Supervisor sets TZ to the HA system timezone; tzdata in the image honors it.
+exec > >(while IFS= read -r line; do
+    printf '%(%Y-%m-%d %H:%M:%S %Z)T %s\n' -1 "$line"
+done) 2>&1
+
 OPTS=/data/options.json
 SSH_PORT=$(jq -r '.ssh_port' "$OPTS")
 

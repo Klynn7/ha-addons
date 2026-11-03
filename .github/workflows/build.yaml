@@ -136,10 +136,28 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history, to collect commits since the last release
 
       - uses: actions/download-artifact@v4
         with:
           name: manifest
+
+      - name: Update changelog
+        env:
+          VERSION: ${{ needs.check.outputs.version }}
+        run: |
+          last=$(git log -1 --format=%H --grep='^corosync_qnetd: release ' || true)
+          range=${last:+$last..}HEAD
+          git log "$range" --no-merges --format=%s -- "$ADDON" \
+              ":(exclude)$ADDON/CHANGELOG.md" ":(exclude)$MANIFEST" \
+            | sed -E 's/^corosync_qnetd: //' > commits.txt
+          python3 .github/scripts/update_changelog.py \
+            "$ADDON/CHANGELOG.md" "$MANIFEST" new-manifest.txt "$VERSION" commits.txt
+          {
+            echo "### Changelog entry"
+            awk '/^## /{n++} n==1' "$ADDON/CHANGELOG.md"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Bump version and record manifest
         env:
@@ -149,7 +167,7 @@ jobs:
           mv new-manifest.txt "$MANIFEST"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "$ADDON/config.yaml" "$MANIFEST"
+          git add "$ADDON/config.yaml" "$MANIFEST" "$ADDON/CHANGELOG.md"
           git commit -m "corosync_qnetd: release ${VERSION}"
           git pull --rebase
           git push

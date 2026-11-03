@@ -14,6 +14,8 @@ Proxmox QDevice arbiter (`corosync-qnetd`) for an even-node Proxmox cluster, run
 
 Run the workflow manually with **force** to publish without changes.
 
+Each release prepends an entry to `corosync_qnetd/CHANGELOG.md` (shown in Home Assistant's update dialog) listing changed Debian packages. For hand-written notes, add an `## Unreleased` section at the top of the changelog; the next release renames it to the new version. Without one, the subjects of commits that changed the add-on since the last release are used.
+
 ### Proxmox setup
 
 ```

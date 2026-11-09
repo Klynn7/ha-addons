@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026.11.09.6
+
+Debian package updates:
+
+- `apt` 3.0.3 → 3.0.4
+- `libapt-pkg7.0` 3.0.3 → 3.0.4
+- `zlib1g` 1:1.3.dfsg+really1.3.1-1+b1 → 1:1.3.dfsg+really1.3.1-1+deb13u1
+
 ## 2026.11.03.5
 
 - corosync-qnetd now receives the stop signal directly and shuts down cleanly. Previously `runuser` force-killed it 2 seconds after every stop, logging "Session terminated, killing shell... ...killed."

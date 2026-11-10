@@ -147,7 +147,7 @@ jobs:
         with:
           fetch-depth: 0 # full history, to collect commits since the last release
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: manifest
 

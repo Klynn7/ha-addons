@@ -37,6 +37,8 @@ jobs:
       version: ${{ steps.decide.outputs.version }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history, to number releases within a day
 
       - name: Build probe image and write manifest
         run: |
@@ -64,7 +66,13 @@ jobs:
           else
             changed=false
           fi
-          version="$(date -u +%Y.%m.%d).${GITHUB_RUN_NUMBER}"
+          # YYYY.MM.DD.N, where N counts releases made on that (UTC) day.
+          # The concurrency group serializes runs, so N can't collide.
+          today=$(date -u +%Y.%m.%d)
+          last=$(git log --format=%s \
+                   | sed -n "s/^corosync_qnetd: release ${today//./\\.}\.\([0-9]\+\)$/\1/p" \
+                   | sort -n | tail -1)
+          version="${today}.$(( ${last:-0} + 1 ))"
 
           echo "changed=$changed" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"

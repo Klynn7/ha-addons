@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026.11.23.1
+
+Debian package updates:
+
+- `base-files` 13.8+deb13u7 → 13.8+deb13u8
+- `libc-bin` 2.41-12+deb13u4 → 2.41-12+deb13u5
+- `libc6` 2.41-12+deb13u4 → 2.41-12+deb13u5
+- `libgssapi-krb5-2` 1.21.3-5+deb13u1 → 1.21.3-5+deb13u2
+- `libk5crypto3` 1.21.3-5+deb13u1 → 1.21.3-5+deb13u2
+- `libkrb5-3` 1.21.3-5+deb13u1 → 1.21.3-5+deb13u2
+- `libkrb5support0` 1.21.3-5+deb13u1 → 1.21.3-5+deb13u2
+- `libssl3t64` 3.5.7-1~deb13u3 → 3.5.9-1~deb13u1
+- `openssl-provider-legacy` 3.5.7-1~deb13u3 → 3.5.9-1~deb13u1
+
 ## 2026.11.09.6
 
 Debian package updates:

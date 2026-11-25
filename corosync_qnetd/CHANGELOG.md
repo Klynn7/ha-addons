@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026.11.25.1
+
+Debian package updates:
+
+- `libzstd1` `1.5.7+dfsg-1` → `1.5.7+dfsg-1+deb13u1`
+
 ## 2026.11.23.1
 
 Debian package updates:

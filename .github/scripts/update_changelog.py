@@ -31,17 +31,19 @@ def read_manifest(path: Path) -> tuple[str | None, dict[str, str]]:
 
 
 def package_lines(old: dict[str, str], new: dict[str, str]) -> list[str]:
+    # Versions go in code spans: Debian versions contain "~", which Markdown
+    # would otherwise pair up into strikethrough.
     lines = []
     for name in sorted(old.keys() | new.keys()):
         before, after = old.get(name), new.get(name)
         if before == after:
             continue
         if before is None:
-            lines.append(f"- Added `{name}` {after}")
+            lines.append(f"- Added `{name}` `{after}`")
         elif after is None:
-            lines.append(f"- Removed `{name}` (was {before})")
+            lines.append(f"- Removed `{name}` (was `{before}`)")
         else:
-            lines.append(f"- `{name}` {before} → {after}")
+            lines.append(f"- `{name}` `{before}` → `{after}`")
     return lines
 
 
